@@ -1,6 +1,12 @@
+#include <ESP8266WiFi.h>
+#include <ESP8266mDNS.h>
+#include <ESPTelnet.h>
 #include <TinyMqtt.h>   // https://github.com/hsaturn/TinyMqtt
 #include <TinyConsole.h>
-#include "Roomba.h"
+#include <ArduinoOTA.h>
+
+#include "roomba.h"
+#include "auth.h"
 
 /** 
   * 
@@ -24,48 +30,78 @@
   *            +------------------------------+
   * 
   */
-
-const char *ssid     = "Freebox-786A2F";
-const char *password = "usurpavi8dalum64lumine?";
-
 std::string topic="sensor/temperature";
 
 MqttBroker broker(1883);
-
 MqttClient mqtt(&broker);
+
+ESPTelnet telnet;
 
 void onPublish(const MqttClient* /* source */, const Topic& topic, const char* payload, size_t /* length */)
 { Serial << "--> client A received " << topic.c_str() << ", " << payload << endl; }
 
-void setup()
+void onCommand(String str)
 {
-  Serial.begin(115200);   // Usb serial
-  Serial1.begin(115200);  // Hardware serial
+  Serial << "telnet: " << str << "\n";
+  telnet << "command: " << str << endl;
+}
 
-  
+void onConnect(String ip)
+{
+  Serial << "Incoming connection " << ip << endl;
+  telnet << "Welcome" << endl;
+}
 
-  delay(100);
-  Serial << "Clients with wifi " << endl;
+void setupTelnet()
+{
+  telnet.setLineMode(true);
+  telnet.begin(23);
+  telnet.onInputReceived(onCommand);
+  telnet.onConnect(onConnect);
+}
 
-	if (strlen(ssid)==0)
-		Serial << "****** PLEASE EDIT THE EXAMPLE AND MODIFY ssid/password *************" << endl;
-
+void setupWifi()
+{
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
+  while (WiFi.waitForConnectResult() != WL_CONNECTED) {
+    delay(5000);
+    ESP.restart();
+  }
+}
 
-  while (WiFi.status() != WL_CONNECTED) {   Serial << '-'; delay(500); }
+void setupOta()
+{
+  // Hostname defaults to esp8266-[ChipID]
+  ArduinoOTA.setHostname("RoombaTest");
+  ArduinoOTA.setPasswordHash("f64e51d7d8de34ef350a526467e0a610"); // ..5..
 
-  Serial << "Connected to " << ssid << "IP address: " << WiFi.localIP() << endl;
+  ArduinoOTA.onStart([]() {});
+  ArduinoOTA.onEnd([]() {});
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) { });
+  ArduinoOTA.onError([](ota_error_t error) {});
 
-  broker.begin();
+  ArduinoOTA.begin();
+}
 
+void setupMqtt()
+{
   mqtt.setCallback(onPublish);
   mqtt.subscribe("#");
 }
 
+void setup()
+{
+  Serial.begin(115200); // TODO move to roomba class
+  setupWifi();
+  setupOta();
+  setupMqtt();
+  setupTelnet();
+}
+
 void loop()
 {
-  broker.loop();
+  ArduinoOTA.handle();
+  telnet.loop();
   mqtt.loop();
-
 }
