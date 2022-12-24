@@ -6,6 +6,7 @@
 #include <ArduinoOTA.h>
 
 #include "roomba.h"
+#include "logo.h"
 #include "auth.h"
 
 /** 
@@ -30,6 +31,8 @@
   *            +------------------------------+
   * 
   */
+
+ESPTelnet &operator <<(ESPTelnet &obj, std::string arg) { obj.print(arg.c_str()); return obj; } 
 std::string topic="sensor/temperature";
 
 MqttBroker broker(1883);
@@ -40,24 +43,44 @@ ESPTelnet telnet;
 void onPublish(const MqttClient* /* source */, const Topic& topic, const char* payload, size_t /* length */)
 { Serial << "--> client A received " << topic.c_str() << ", " << payload << endl; }
 
-void onCommand(String str)
+void onInputReceived(String str)
 {
-  Serial << "telnet: " << str << "\n";
-  telnet << "command: " << str << endl;
+	static std::string cmd;
+	if (str=="\r" or str=="\n")
+	{
+		if (cmd.length())
+		{
+			Serial << "telnet: " << cmd << endl;
+			telnet << "command: " << cmd << endl;
+			std::string first = Command::firstWord(cmd);
+			if (first == "help")
+			{
+				Command::help(cmd, telnet);
+			}
+			else if (not Command::handle(cmd))
+			{
+				telnet << "Unknow command: " << cmd << endl;
+			}
+			telnet.print("> ");
+			cmd.clear();
+		}
+	}
+	else
+		cmd += std::string(str.c_str());
 }
 
 void onConnect(String ip)
 {
   Serial << "Incoming connection " << ip << endl;
-  telnet << "Welcome" << endl;
+  telnet << "Busybox telnet\n\r> ";
 }
 
 void setupTelnet()
 {
-  telnet.setLineMode(true);
-  telnet.begin(23);
-  telnet.onInputReceived(onCommand);
+  telnet.setLineMode(false);
+  telnet.onInputReceived(onInputReceived);
   telnet.onConnect(onConnect);
+  telnet.begin(23);
 }
 
 void setupWifi()
@@ -90,6 +113,11 @@ void setupMqtt()
   mqtt.subscribe("#");
 }
 
+void setupLogo()
+{
+	Command::addHandler(new Logo());
+}
+
 void setup()
 {
   Serial.begin(115200); // TODO move to roomba class
@@ -97,6 +125,7 @@ void setup()
   setupOta();
   setupMqtt();
   setupTelnet();
+  setupLogo();
 }
 
 void loop()
