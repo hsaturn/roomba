@@ -14,17 +14,26 @@ class Command
 {
 
 	public:
+		struct Params
+		{
+			Params(Roomba& r, std::string& a, OutputStream& o) : roomba(r), args(a), out(o) {};
+
+			Roomba& roomba;
+			std::string& args;
+			OutputStream& out;
+		};
+
 		virtual const char* name() const = 0;
 
-		static bool handle(std::string &, Roomba&, OutputStream& out);
+		static bool handle(Params& params);
 		static void addHandler(Command*);
 		static std::string firstWord(const std::string&);
 		static std::string getWord(std::string&);
 		static void trim(std::string&);
 		static int getInt(std::string&);
-		static void help(std::string&, HelpStream&);
+		static void help(Params&);
 
-		using HandlerFunc = bool(Roomba &, std::string &str, OutputStream &);
+		using HandlerFunc = bool(Params&);
 		struct Handler
 		{
 			std::string args;

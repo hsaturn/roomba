@@ -49,7 +49,11 @@ Roomba roomba;
 Flash flash(5000);
 
 void onPublish(const MqttClient* /* source */, const Topic& topic, const char* payload, size_t /* length */)
-{ telnet << "mqtt: received " << topic.c_str() << ", " << payload << endl; }
+{
+  telnet << "mqtt: received " << topic.c_str() << ", " << payload << endl;
+  if (topic.str() == "roomba/exec")
+    onInputReceived(payload);
+}
 
 void onInputReceived(String str)
 {
@@ -60,17 +64,14 @@ void onInputReceived(String str)
 		if (cmd.length())
 		{
 			std::string first = Command::firstWord(cmd);
-			if (first == "help")
-			{
-				Command::help(cmd, telnet);
-			}
-			else if (Command::handle(cmd, roomba, telnet))
+      Command::Params p(roomba, cmd, telnet);
+			if (Command::handle(p))
 			{
 				telnet.println("ok");
 			}
 			else
 			{
-				telnet << "Unknow command: " << cmd << endl;
+				telnet << "Unknow command: " << first << endl;
 			}
 			telnet.print(hostname.c_str());
 			telnet.print(" > ");
@@ -96,6 +97,7 @@ void setupTelnet()
 
 void setupWifi()
 {
+  WiFi.persistent(false);
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   while (WiFi.waitForConnectResult() != WL_CONNECTED) {
@@ -120,8 +122,9 @@ void setupOta()
 
 void setupMqtt()
 {
+  broker.begin();
   mqtt.setCallback(onPublish);
-  mqtt.subscribe("#");
+  mqtt.subscribe("roomba");
 }
 
 void setupRoomba()
@@ -154,6 +157,7 @@ void loop()
 {
   ArduinoOTA.handle();
   telnet.loop();
+  broker.loop();
   mqtt.loop();
   flash.loop();
 }

@@ -4,51 +4,51 @@
 RoombaCommand::RoombaCommand()
 {
 	handlers = {
-	{ "start",   { "" , [](Roomba& roomba, std::string&, OutputStream&)->bool { roomba.start(); return true; }}},
-	{ "off",     { "" , [](Roomba& roomba, std::string&, OutputStream&)->bool { roomba.start(); return true; }}},
-	{ "passive", { "" , [](Roomba& roomba, std::string&, OutputStream&)->bool { roomba.passive(); return true; }}},
-	{ "safe",    { "" , [](Roomba& roomba, std::string&, OutputStream&)->bool { roomba.safe(); return true; }}},
-	{ "full",    { "" , [](Roomba& roomba, std::string&, OutputStream&)->bool { roomba.full(); return true; }}},
-	{ "reset",   { "" , [](Roomba& roomba, std::string&, OutputStream&)->bool { roomba.reset(); return true; }}},
-	{ "stop",    { "" , [](Roomba& roomba, std::string&, OutputStream&)->bool { roomba.stop(); return true; }}},
-	{ "clean",   { "" , [](Roomba& roomba, std::string&, OutputStream&)->bool { roomba.clean(); return true; }}},
-	{ "spot",    { "" , [](Roomba& roomba, std::string&, OutputStream&)->bool { roomba.spot(); return true; }}},
-	{ "dock",    { "" , [](Roomba& roomba, std::string&, OutputStream&)->bool { roomba.dock(); return true; }}},
+	{ "start",   { "" , [](Params& p)->bool { p.roomba.start(); return true; }}},
+	{ "off",     { "" , [](Params& p)->bool { p.roomba.start(); return true; }}},
+	{ "passive", { "" , [](Params& p)->bool { p.roomba.passive(); return true; }}},
+	{ "safe",    { "" , [](Params& p)->bool { p.roomba.safe(); return true; }}},
+	{ "full",    { "" , [](Params& p)->bool { p.roomba.full(); return true; }}},
+	{ "reset",   { "" , [](Params& p)->bool { p.roomba.reset(); return true; }}},
+	{ "stop",    { "" , [](Params& p)->bool { p.roomba.stop(); return true; }}},
+	{ "clean",   { "" , [](Params& p)->bool { p.roomba.clean(); return true; }}},
+	{ "spot",    { "" , [](Params& p)->bool { p.roomba.spot(); return true; }}},
+	{ "dock",    { "" , [](Params& p)->bool { p.roomba.dock(); return true; }}},
 	// safe mode
-	{ "dd",      { "l r : drive direct" , [](Roomba& roomba, std::string& args, OutputStream& out)->bool
+	{ "dd",      { "l r : drive direct" , [](Params& p)->bool
 							{
-								int16_t l=getInt(args);
-								int16_t r=getInt(args);
-								roomba.driveDirect(l,r);
+								int16_t l=getInt(p.args);
+								int16_t r=getInt(p.args);
+								p.roomba.driveDirect(l,r);
 								return true;
 							}}},
-	{ "drive",   { "v rad : drive" , [](Roomba& roomba, std::string& args, OutputStream&)->bool
+	{ "drive",   { "v rad : drive" , [](Params& p)->bool
 							{
-								int16_t l=getInt(args);
-								int16_t r=getInt(args);
-								roomba.driveDirect(l,r);
+								int16_t l=getInt(p.args);
+								int16_t r=getInt(p.args);
+								p.roomba.driveDirect(l,r);
 								return true;
 							}}},
-	{ "brush",   { "pwm : speed of main brush" , [](Roomba& roomba, std::string& args, OutputStream&)->bool { return roomba.main_brush(getInt(args)); }}},
-	{ "side",    { "pwm : speed of side brush" , [](Roomba& roomba, std::string& args, OutputStream&)->bool { return roomba.side_brush(getInt(args)); }}},
-	{ "vacuum",  { "pwm : speed of vacuum"     , [](Roomba& roomba, std::string& args, OutputStream&)->bool { return roomba.vacuum(getInt(args));}}},
-	{ "raw",     { "byte byte ... : send raw bytes" , [](Roomba& roomba, std::string& args, OutputStream& out)->bool
+	{ "brush",   { "pwm : speed of main brush" , [](Params& p)->bool { return p.roomba.main_brush(getInt(p.args)); }}},
+	{ "side",    { "pwm : speed of side brush" , [](Params& p)->bool { return p.roomba.side_brush(getInt(p.args)); }}},
+	{ "vacuum",  { "pwm : speed of vacuum"     , [](Params& p)->bool { return p.roomba.vacuum(getInt(p.args));}}},
+	{ "raw",     { "byte byte ... : send raw bytes" , [](Params& p)->bool
 			{
 				std::string raw;
 				std::string::size_type s=0;
-				while(s != args.length())
+				while(s != p.args.length())
 				{
-					s = args.length();
-					if (s) raw += static_cast<char>(getInt(args));
+					s = p.args.length();
+					if (s) raw += static_cast<char>(getInt(p.args));
 				}
-				if (args.length())
+				if (p.args.length())
 				{
-					out << "  garbage (" << args.c_str() << ')' << endl;
+					p.out << "  garbage (" << p.args.c_str() << ')' << endl;
 				}
 				else
 				{
-					out << "  sending raw bytes, size=" << String(raw.length()) << endl;
-					roomba.raw(raw);
+					p.out << "  sending raw bytes, size=" << String(raw.length()) << endl;
+					p.roomba.raw(raw);
 				}
 				return true;
 			}}},
