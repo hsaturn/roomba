@@ -30,7 +30,7 @@ Lidar::Lidar(OutputStream& out, MqttClient* clt)
 void Lidar::init()
 {
   Wire.endTransmission();
-  delay(500);
+  delay(100);
   Wire.begin();
   Wire.setClock(400000);
   delay(100);
