@@ -53,14 +53,15 @@ void Command::addHandler(Command* command)
 
 void Command::help(Params& p)
 {
-	p.out << "l/r/v=-500 .. 500mm/s  rad=-2000 2000mm" << endl;
 	p.out << endl;
-	p.out << "modules : list of installed modules" << endl;
-	p.out << "help    : this help" << endl;
+	p.out << "modules       : list of installed modules" << endl;
+	p.out << "help [module] : this help" << endl;
+	p.out << "  params: l/r/v=-500 .. 500mm/s  rad=-2000 2000mm" << endl;
 	p.out << endl;
+	auto cmd = getWord(p.args);
 	for(auto& command: commands)
 	{
-		// if (command->handlers.size())
+		if (command->handlers.size() and (cmd.length()==0 or cmd==command->name()))
 		{
 			p.out << command->name() << " commands:" << endl;
 			for(auto& it: command->handlers)
