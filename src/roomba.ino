@@ -50,13 +50,6 @@ Roomba roomba;
 Flash flash(5000);
 Lidar* lidar = nullptr;
 
-void onPublish(const MqttClient* /* source */, const Topic& topic, const char* payload, size_t /* length */)
-{
-  telnet << "mqtt: received " << topic.c_str() << ", " << payload << endl;
-  if (topic.str() == "roomba/exec")
-    onInputReceived(payload);
-}
-
 void onInputReceived(String str)
 {
   flash.flash();
@@ -82,6 +75,15 @@ void onInputReceived(String str)
 	}
 	else
 		cmd += std::string(str.c_str());
+}
+
+void onPublish(const MqttClient* /* source */, const Topic& topic, const char* payload, size_t /* length */)
+{
+  if (topic.str() == "roomba/exec")
+  {
+    telnet << "mqtt: received " << topic.c_str() << ", " << payload << endl;
+    onInputReceived(payload);
+  }
 }
 
 void onConnect(String ip)
@@ -126,7 +128,7 @@ void setupMqtt()
 {
   broker.begin();
   mqtt.setCallback(onPublish);
-  mqtt.subscribe("roomba");
+  mqtt.subscribe("#");
 }
 
 void setupRoomba()
@@ -167,7 +169,7 @@ void loop()
   ArduinoOTA.handle();
   telnet.loop();
   broker.loop();
-  // mqtt.loop();
+  mqtt.loop();
   flash.loop();
   Command::loops();
 }
