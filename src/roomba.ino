@@ -169,5 +169,6 @@ void loop()
   broker.loop();
   // mqtt.loop();
   flash.loop();
+  Command::loops();
   if (lidar) lidar->loop();
 }

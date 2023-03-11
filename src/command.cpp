@@ -73,6 +73,14 @@ void Command::help(Params& p)
 	}
 }
 
+void Command::loops()
+{
+	for(auto& command: commands)
+	{
+		command->loop();
+	}	
+}
+
 std::string Command::firstWord(const std::string& str)
 {
 	auto spc = str.find(' ');

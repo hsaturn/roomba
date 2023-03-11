@@ -8,6 +8,7 @@
 using HelpStream=ESPTelnet;
 using OutputStream=ESPTelnet;
 #define endl "\r\n"
+
 class Roomba;
 
 class Command
@@ -24,6 +25,8 @@ class Command
 		};
 
 		virtual const char* name() const = 0;
+		virtual void loop() {};
+		static void loops();
 
 		static bool handle(Params& params);
 		static void addHandler(Command*);
