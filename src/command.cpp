@@ -114,7 +114,8 @@ int Command::getInt(std::string& str)
 		str.erase(0,2);
 	}
 	std::string::size_type pos = minus ? 1 : 0;
-	while(pos < str.size() and (str[pos]>='0' and str[pos]<='9' or base==16 and str[pos]>='A' and str[pos]<='F'))
+	while(pos < str.size() and
+	 ((str[pos]>='0' and str[pos]<='9') or (base==16 and str[pos]>='A' and str[pos]<='F')))
 	{
 		valid = true;
 		if (str[pos]<='9')
