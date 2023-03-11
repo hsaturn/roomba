@@ -68,21 +68,31 @@ void onInputReceived(String str)
 			{
 				telnet << "Unknow command: " << first << endl;
 			}
-			telnet.print(hostname.c_str());
-			telnet.print(" > ");
-			cmd.clear();
-		}
-	}
+      telnet.print(hostname.c_str());
+      telnet.print(" > ");
+      cmd.clear();
+    }
+  }
 	else
 		cmd += std::string(str.c_str());
 }
 
 void onPublish(const MqttClient* /* source */, const Topic& topic, const char* payload, size_t /* length */)
 {
-  if (topic.str() == "roomba/exec")
+  std::string t = topic.str();
+  std::string device = Command::getWord(t, '/');
+  if (device == "roomba")
   {
-    telnet << "mqtt: received " << topic.c_str() << ", " << payload << endl;
-    onInputReceived(payload);
+    if (t == "exec")
+    {
+      telnet << "mqtt: received " << topic.c_str() << ", " << payload << endl;
+      onInputReceived(payload);
+    }
+    else
+    {
+      onInputReceived(t.c_str());
+    }
+    onInputReceived("\n");
   }
 }
 
