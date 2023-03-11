@@ -30,6 +30,12 @@ Nanos::Nanos()
         { "undef", { "name" ,        [this](Params& p)->bool { this->undef(p); return true; } }},
         { "wait",  { "ms",           [this](Params& p)->bool { delay(getInt(p.args)); return true; }}},
         { "pwr" ,  { "low high",     [this](Params& p)->bool { pwr_policy(p); return true; }}},
+        { "loops", { "avg loop time",[this](Params& p)->bool {
+            p.out << "Avg loop time: " << String(loops_avg_) << "us, min/max=" << min_loop_ << '/' << max_loop_ << "us." << endl;
+            min_loop_ = 99999999;
+            max_loop_ = 0;
+            return true;
+        }}},
     };
 }
 
@@ -61,4 +67,17 @@ void Nanos::undef(Params& p)
         p.out << "Unknown command: '" << cmd.c_str() << '\'' << endl;
     else
         handlers.erase(cmd);
+}
+
+void Nanos::loop()
+{
+    auto us = micros();
+    if (last_loop_)
+    {
+        auto delta_us = us-last_loop_;
+        loops_avg_ = 0.99*loops_avg_ + 0.01*delta_us;
+        max_loop_ = std::max(delta_us, max_loop_);
+        min_loop_ = std::min(delta_us, min_loop_);
+    }
+    last_loop_ = us;
 }
