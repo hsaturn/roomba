@@ -31,7 +31,7 @@ class Command
 		static bool handle(Params& params);
 		static void addHandler(Command*);
 		static std::string firstWord(const std::string&);
-		static std::string getWord(std::string&);
+		static std::string getWord(std::string&, char sep=' ');
 		static void trim(std::string&);
 		static int getInt(std::string&);
 		static void help(Params&);

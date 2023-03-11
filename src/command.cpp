@@ -89,10 +89,10 @@ std::string Command::firstWord(const std::string& str)
 	return str.substr(0, spc);
 }
 
-std::string Command::getWord(std::string& str)
+std::string Command::getWord(std::string& str, char sep)
 {
 	std::string word;
-	auto spc = str.find(' ');
+	auto spc = str.find(sep);
 	if (spc == std::string::npos)
 	{
 		word = str;
