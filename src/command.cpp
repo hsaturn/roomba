@@ -6,17 +6,34 @@ bool Command::handle(Params& p)
 {
 	while(p.args.length())
 	{
+		std::string module="";
 		std::string cmd = getWord(p.args);
+		std::string::size_type dot = cmd.find('.');
+		if (dot != std::string::npos)
+		{
+			module = cmd.substr(0, dot);
+			cmd.erase(0, dot+1);
+		}
 		if (cmd == "help")
 		{
 			help(p);
+			continue;
+		}
+		else if (cmd == "modules")
+		{
+			p.out << "Installed modules:";
+			for (auto& command: commands)
+				p.out << ' ' << command->name();
+			p.out << '.' << endl;
 			continue;
 		}
 
 		bool exec = false;
 		for(auto& command: commands)
 		{
-			p.out << "exec(" << cmd.c_str() << ") args=(" << p.args.c_str() << ')' <<endl;
+			// p.out << "exec(" << cmd.c_str() << ") args=(" << p.args.c_str() << ')' <<endl;
+			if (module.length() and module != command->name()) continue;
+
 			auto it=command->handlers.find(cmd.c_str());
 			if (it == command->handlers.end()) continue;
 			exec = true;
@@ -37,14 +54,21 @@ void Command::addHandler(Command* command)
 void Command::help(Params& p)
 {
 	p.out << "l/r/v=-500 .. 500mm/s  rad=-2000 2000mm" << endl;
+	p.out << endl;
+	p.out << "modules : list of installed modules" << endl;
+	p.out << "help    : this help" << endl;
+	p.out << endl;
 	for(auto& command: commands)
 	{
-		p.out << command->name() << " commands:" << endl;
-		for(auto& it: command->handlers)
+		// if (command->handlers.size())
 		{
-			p.out << "  " << it.first.c_str() << ' ' << it.second.args.c_str() << endl;
+			p.out << command->name() << " commands:" << endl;
+			for(auto& it: command->handlers)
+			{
+				p.out << "  " << it.first.c_str() << ' ' << it.second.args.c_str() << endl;
+			}
+			p.out << endl;
 		}
-		p.out << endl;
 	}
 }
 
