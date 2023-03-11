@@ -146,7 +146,7 @@ void setupNanos()
 
 void setupLidar()
 {
-  lidar = new Lidar(telnet);
+  lidar = new Lidar(telnet, &mqtt);
   Command::addHandler(lidar);
 }
 

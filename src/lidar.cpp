@@ -1,6 +1,8 @@
 #include "lidar.h"
+#include <TinyMqtt.h>
 
-Lidar::Lidar(OutputStream& out)
+Lidar::Lidar(OutputStream& out, MqttClient* clt)
+  : mqtt(clt)
 {
  handlers = {
     { "mm", { "", [this](Params& p)->bool
@@ -54,5 +56,10 @@ void Lidar::loop()
     if (sensor.ranging_data.range_status == 0)
     last_update = millis();
     distance = sensor.ranging_data.range_mm;
+    if (mqtt)
+    {
+      static Topic lidar("lidar");
+      mqtt->publish(lidar, String(distance));
+    }
   } 
 }
