@@ -14,6 +14,7 @@ Nanos::Nanos()
 {
     handlers = {
         { "reboot", { "" ,                  [](Params& p)->bool { ESP.reset(); return true; }}},
+        { "ip",     { "" ,                  [](Params& p)->bool { p.out << "ip: " << WiFi.localIP().toString() << endl; return true; }}},
         { "free", { "" ,                    [](Params& p)->bool { p.out << "free heap: " << String(ESP.getFreeHeap()) << endl; return true; }}},
         { "error", { "n : set flash mode" , [](Params& p)->bool { flash.error(getInt(p.args)); return true; }}},
         { "int", { "" ,                     [](Params& p)->bool { 
