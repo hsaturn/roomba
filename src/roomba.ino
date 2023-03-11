@@ -9,6 +9,7 @@
 #include "roomba_command.h"
 #include "nanos.h"
 #include "logo.h"
+#include "lidar.h"
 #include "auth.h"
 #include "flash.h"
 
@@ -47,6 +48,7 @@ ESPTelnet telnet;
 Roomba roomba;
 
 Flash flash(5000);
+Lidar* lidar = nullptr;
 
 void onPublish(const MqttClient* /* source */, const Topic& topic, const char* payload, size_t /* length */)
 {
@@ -142,15 +144,22 @@ void setupNanos()
   Command::addHandler(new Nanos());
 }
 
+void setupLidar()
+{
+  lidar = new Lidar(telnet);
+  Command::addHandler(lidar);
+}
+
 void setup()
 {
   setupWifi();
   setupOta();
-  setupMqtt();
   setupTelnet();
+  setupMqtt();
   setupNanos();
   setupRoomba();
   setupLogo();
+  setupLidar();
 }
 
 void loop()
@@ -158,6 +167,7 @@ void loop()
   ArduinoOTA.handle();
   telnet.loop();
   broker.loop();
-  mqtt.loop();
+  // mqtt.loop();
   flash.loop();
+  if (lidar) lidar->loop();
 }
