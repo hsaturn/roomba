@@ -49,6 +49,7 @@ Roomba roomba;
 
 Flash flash(5000);
 Lidar* lidar = nullptr;
+Nanos* nanos = nullptr;
 
 void onInputReceived(String str)
 {
@@ -153,7 +154,8 @@ void setupLogo()
 
 void setupNanos()
 {
-  Command::addHandler(new Nanos());
+  nanos = new Nanos;
+  Command::addHandler(nanos);
 }
 
 void setupLidar()
@@ -181,5 +183,34 @@ void loop()
   broker.loop();
   mqtt.loop();
   flash.loop();
+  roomba.loop();
   Command::loops();
+
+  static unsigned long last = 0;
+  std::string un = roomba.unexpectedChars();
+  if (un.size())
+  {
+    if (millis() - last > 100)
+      telnet << endl;
+    last = millis();
+    while (un.size())
+    {
+      char c=un[0];
+      if (c >= 32 or c==13 or c==10 or c==9)
+        telnet << c;
+      else
+        telnet << '<' << (int)c << '>';
+      un.erase(0,1);
+    }
+  }
+
+  if (nanos)
+  {
+    std::string cmd = nanos->getEvery();
+    if (cmd.length())
+    {
+      Command::Params p(roomba, cmd, telnet);
+      Command::handle(p);
+    }
+  }
 }
