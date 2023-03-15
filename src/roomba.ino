@@ -63,16 +63,17 @@ void onInputReceived(String str)
       Command::Params p(roomba, cmd, telnet);
 			if (Command::handle(p))
 			{
-				telnet.println("ok");
+				telnet.print("ok");
 			}
 			else
 			{
-				telnet << "Unknow command: " << first << endl;
+				telnet << "Unknow command: " << first;
 			}
-      telnet.print(hostname.c_str());
-      telnet.print(" > ");
-      cmd.clear();
     }
+    telnet << endl;
+    telnet.print(hostname.c_str());
+    telnet.print(" > ");
+    cmd.clear();
   }
 	else
 		cmd += std::string(str.c_str());
