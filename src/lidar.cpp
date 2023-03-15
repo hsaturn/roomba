@@ -17,6 +17,7 @@ Lidar::Lidar(OutputStream& out, MqttClient* clt)
         p.out << endl;
         return true;
       }}},
+    { "stop", { "", [this](Params& p)->bool { stop(); return true; }}},
     { "init", { "", [this](Params& p)->bool
       {
         init();
@@ -25,6 +26,12 @@ Lidar::Lidar(OutputStream& out, MqttClient* clt)
       }
     }},
   };
+}
+
+void Lidar::stop()
+{
+  sensor.stopContinuous();
+  Wire.endTransmission();
 }
 
 void Lidar::init()

@@ -13,7 +13,9 @@ class Lidar : public Command
 		const char* name() const override { return "lidar"; }
 
 		void loop();
+
 		void init();
+		void stop();
 
 		bool ok() const { return last_update != 0; }
 		unsigned long lastUpdate() const { return last_update; }

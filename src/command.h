@@ -5,8 +5,8 @@
 #include <map>
 
 #include <ESPTelnet.h>
-using HelpStream=ESPTelnet;
 using OutputStream=ESPTelnet;
+using HelpStream=ESPTelnet;
 #define endl "\r\n"
 
 class Roomba;
