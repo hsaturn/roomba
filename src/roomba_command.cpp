@@ -52,5 +52,21 @@ RoombaCommand::RoombaCommand()
 				}
 				return true;
 			}}},
+	{ "status",  { "", [](Params& p)
+		{
+			p.out << "received  : " << p.roomba.received << endl;
+			p.out << "unexpected: " << p.roomba.unexpected_bytes_ << endl;
+			p.out << "uart tx-rx: " << Serial.tx() << '-' << Serial.rx() << endl;
+			p.out << "reading ? : " << (p.roomba.readBusy() ? "yes" : "no") << endl;
+			return true;
+		}}},
+	{ "periodics", { "", [](Params& p)->bool
+		{
+			p.out << "periodics: now=" << millis() << endl;
+			for(const auto& periodic: p.roomba.periodics_)
+				p.out << "packet " << periodic.packetId << ", ms=" << periodic.ms << ", next=" << periodic.next << endl;
+			return true;
+		}
+	}},
 };
 }

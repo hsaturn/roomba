@@ -1,8 +1,14 @@
 #include "roomba.h"
 
+#include <ESPTelnet.h>
 // https://github.com/johnboiles/esp-roomba-mqtt/blob/master/lib/Roomba/Roomba.cpp
 Roomba::Roomba()
 {
+	periodics_ = {
+		{ voltage_, 10000, 22},
+		{ current_, 1000, 23},
+		{ dirt_, 100, 15},
+	};
 }
 
 void Roomba::start()
@@ -49,4 +55,69 @@ bool Roomba::drive(int16_t velocity, int16_t radius)
 
 void Roomba::loop()
 {
+	if (Serial.getRxBufferSize() == 0) return;
+	
+	if (Serial.available())
+	{
+		uint8_t c=(uint8_t)(Serial.read());
+
+		received++;
+		if (readBusy())
+		{
+			*read_ptr_ = c;
+			if (read_left_ > 0)
+			{
+				++read_ptr_;
+				read_left_--;
+			}
+			else
+			{
+				--read_ptr_;
+				read_left_++;
+			}
+			if (read_left_ == 0 and read_cb_)
+			{
+				read_cb_(read_buf_);
+			}
+		}
+		else
+		{
+			if (unexpected_read_.length() > 20)
+				unexpected_read_.erase(0,1);
+			unexpected_read_ += (char)c;
+			unexpected_bytes_++;
+		}
+		return;
+	}
+	if (readBusy() and millis() > read_timeout_)
+	{
+		stopRead();
+	}
+	if (not readBusy())
+	{
+		auto now = millis();
+		for(auto &periodic: periodics_)
+		{
+			bool read=false;
+
+			while (now >= periodic.next)
+			{
+				read = true;
+				periodic.next += periodic.ms;
+			}
+			if (read)
+			{
+				Serial.write(142);
+				Serial.write(periodic.packetId);
+				uint8_t* dest = periodic.buf;
+				int8_t len = periodic.len;
+				readBytes(len,
+					[dest, len](uint8_t *buf)
+					{
+						memcpy(dest, buf, std::abs(len));
+					});
+				break;
+			}
+		}
+	}
 }
