@@ -56,7 +56,7 @@ bool Roomba::drive(int16_t velocity, int16_t radius)
 void Roomba::loop()
 {
 	if (Serial.getRxBufferSize() == 0) return;
-	
+
 	if (Serial.available())
 	{
 		uint8_t c=(uint8_t)(Serial.read());

@@ -1,5 +1,6 @@
 #include "roomba_command.h"
 #include "roomba.h"
+#include "uart.h"
 
 RoombaCommand::RoombaCommand()
 {
@@ -7,26 +8,40 @@ RoombaCommand::RoombaCommand()
 	{ "start",   { "" , [](Params& p)->bool { p.roomba.start(); return true; }}},
 	{ "off",     { "" , [](Params& p)->bool { p.roomba.start(); return true; }}},
 	{ "passive", { "" , [](Params& p)->bool { p.roomba.passive(); return true; }}},
-	{ "safe",    { "" , [](Params& p)->bool { p.roomba.safe(); return true; }}},
-	{ "full",    { "" , [](Params& p)->bool { p.roomba.full(); return true; }}},
+	{ "safe",    { "" , [](Params& p)->bool { p.roomba.safe();  return true; }}},
+	{ "full",    { "" , [](Params& p)->bool { p.roomba.full();  return true; }}},
 	{ "reset",   { "" , [](Params& p)->bool { p.roomba.reset(); return true; }}},
-	{ "stop",    { "" , [](Params& p)->bool { p.roomba.stop(); return true; }}},
+	{ "stop",    { "" , [](Params& p)->bool { p.roomba.stop();  return true; }}},
 	{ "clean",   { "" , [](Params& p)->bool { p.roomba.clean(); return true; }}},
-	{ "spot",    { "" , [](Params& p)->bool { p.roomba.spot(); return true; }}},
-	{ "dock",    { "" , [](Params& p)->bool { p.roomba.dock(); return true; }}},
-	// safe mode
-	{ "dd",      { "l r : drive direct" , [](Params& p)->bool
+	{ "spot",    { "" , [](Params& p)->bool { p.roomba.spot();  return true; }}},
+	{ "dock",    { "" , [](Params& p)->bool { p.roomba.dock();  return true; }}},
+	{ "batt",    { "" , [](Params& p)->bool
+		{
+			p.out << "voltage: " << p.roomba.voltage() << "mv" << endl;
+			p.out << "current: " << p.roomba.current() << "mA" << endl;
+			return true;
+		}}},
+	{ "dirt",    { "" , [this](Params& p)->bool { p.out << "dirt: " << (int)p.roomba.dirt() << endl; return true; }}},
+	{ "dd",      { "l r : drive direct" , [this](Params& p)->bool
 							{
 								int16_t l=getInt(p.args);
 								int16_t r=getInt(p.args);
 								p.roomba.driveDirect(l,r);
 								return true;
 							}}},
-	{ "drive",   { "v rad : drive" , [](Params& p)->bool
+	{ "dd+",      { "l r : NUI" , [this](Params& p)->bool
 							{
 								int16_t l=getInt(p.args);
 								int16_t r=getInt(p.args);
 								p.roomba.driveDirect(l,r);
+								p.roomba.driveDirect(l,r);
+								return true;
+							}}},
+	{ "drive",   { "v rad : drive" , [](Params& p)->bool
+							{
+								int16_t v=getInt(p.args);
+								int16_t a=getInt(p.args);
+								p.roomba.drive(v,a);
 								return true;
 							}}},
 	{ "brush",   { "pwm : speed of main brush" , [](Params& p)->bool { return p.roomba.main_brush(getInt(p.args)); }}},
@@ -56,7 +71,6 @@ RoombaCommand::RoombaCommand()
 		{
 			p.out << "received  : " << p.roomba.received << endl;
 			p.out << "unexpected: " << p.roomba.unexpected_bytes_ << endl;
-			p.out << "uart tx-rx: " << Serial.tx() << '-' << Serial.rx() << endl;
 			p.out << "reading ? : " << (p.roomba.readBusy() ? "yes" : "no") << endl;
 			return true;
 		}}},
