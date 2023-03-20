@@ -5,6 +5,8 @@
 #include <Wire.h>
 #include <VL53L1X.h>	// Pololu
 
+// Note see there https://community.st.com/s/question/0D53W000005pkkPSAQ/vl53l1x-gpio1-interrupt
+
 class Lidar : public Command
 {
 	public:
