@@ -7,7 +7,11 @@
 #include <ESPTelnet.h>
 using OutputStream=ESPTelnet;
 using HelpStream=ESPTelnet;
-#define endl "\r\n"
+#include <TinyStreaming.h>
+
+inline OutputStream& operator <<(OutputStream& obj, _EndLineCode) { obj << "\r\n"; return obj; }
+
+inline ESPTelnet &operator <<(ESPTelnet &obj, std::string arg) { obj.print(arg.c_str()); return obj; } 
 
 class Roomba;
 

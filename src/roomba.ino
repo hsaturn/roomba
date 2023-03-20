@@ -38,7 +38,6 @@ const std::string hostname="Roomba";
   * 
   */
 
-ESPTelnet &operator <<(ESPTelnet &obj, std::string arg) { obj.print(arg.c_str()); return obj; } 
 std::string topic="sensor/temperature";
 
 MqttBroker broker(1883);

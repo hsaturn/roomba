@@ -4,6 +4,9 @@
 #include <functional>
 #include <map>
 
+#include <TinyMqtt.h>
+#include "command.h"
+
 #define BRC_PIN 14
 
 class Roomba

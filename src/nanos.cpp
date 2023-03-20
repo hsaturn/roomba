@@ -1,6 +1,7 @@
 #include "nanos.h"
 #include "flash.h"
 #include <ESP8266WiFi.h>
+#include <TinyStreaming.h>
 
 extern Flash flash;
 
