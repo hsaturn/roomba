@@ -119,7 +119,7 @@ void Nanos::def(Params& p)
         {
             if (++recurse < 20)
             {
-                q.args = cmd;
+                q.args = cmd+' '+q.args;
                 Command::handle(q);
             }
             else
