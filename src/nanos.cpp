@@ -31,7 +31,7 @@ Nanos::Nanos()
         { "def",   { "name command", [this](Params& p)->bool { this->def(p); return true; } }},
         { "undef", { "name" ,        [this](Params& p)->bool { this->undef(p); return true; } }},
         { "wait",  { "ms",           [this](Params& p)->bool { delay(getInt(p.args)); return true; }}},
-        { "pwr" ,  { "low high",     [this](Params& p)->bool { pwr_policy(p); return true; }}},
+        { "pwr" ,  { "save full",    [this](Params& p)->bool { pwr_policy(p); return true; }}},
         { "loops", { " : avg loop time",[this](Params& p)->bool {
             p.out << "Avg loop time: " << String(loops_avg_) << "us, min/max=" << min_loop_ << '/' << max_loop_ << "us." << endl;
             min_loop_ = 99999999;
