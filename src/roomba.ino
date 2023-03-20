@@ -183,7 +183,7 @@ void loop()
   broker.loop();
   mqtt.loop();
   flash.loop();
-  roomba.loop();
+  roomba.loop(&mqtt, &telnet);
   Command::loops();
 
   static unsigned long last = 0;

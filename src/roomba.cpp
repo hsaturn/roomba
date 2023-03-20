@@ -5,10 +5,31 @@
 Roomba::Roomba()
 {
 	periodics_ = {
-		{ voltage_, 10000, 22},
-		{ current_, 1000, 23},
-		{ dirt_, 100, 15},
+		{ voltage_, 10000, 22, "batt/voltage"},
+		{ current_, 1000, 23 , "batt/current" },
+		{ capacity_, 10000, 26, "batt/capacity" },
+		{ charge_, 2000, 21, "batt/state" },
+
+		{ dirt_, 100, 15, "sensor/dirt" },
+		{ buttons_, 20, 18, "sensor/buttons" },
+		{ temp_, 1000, 24, "sensor/temp" },
+		{ wall_, 50, 27, "sensor/wall" },
+		{ lclift_, 50, 28, "sensor/left_clift" },
+		{ flclift_, 50, 29, "sensor/front_left_clift" },
+		{ frclift_, 50, 30, "sensor/front_right_clift" },
+		{ rclift_, 50, 31, "sensor/right_clift" },
+		{ bumpers_, 20, 45, "sensors/bumpers"},
+		{ stasis_, 50, 58, "sensors/statis" },
+
+		{ velocity_, 20, 39, "velocity/velocity" },
+		{ radius_, 20, 40, "velocity/radius" },
+		{ rvelocity_, 20, 41, "velocity/right" },
+		{ lvelocity_, 20, 42, "velocity/left" },
+		{ lsteps_, 20, 43, "steps/left" },
+		{ rsteps_, 20, 44, "steps/right" },
+
 	};
+	looper_ = periodics_.begin();
 }
 
 void Roomba::start()
@@ -53,7 +74,7 @@ bool Roomba::drive(int16_t velocity, int16_t radius)
 	return true;
 }
 
-void Roomba::loop()
+void Roomba::loop(MqttClient* mqtt, OutputStream* out)
 {
 	if (Serial.getRxBufferSize() == 0) return;
 
@@ -95,12 +116,19 @@ void Roomba::loop()
 	}
 	if (not readBusy())
 	{
-		auto now = millis();
-		for(auto &periodic: periodics_)
+		auto ms = millis();
+		if (looper_ == periodics_.end())
 		{
+			if (ms_begin_ and mqtt) mqtt->publish("last_ploop", String(ms - ms_begin_));
+			ms_begin_ = ms;
+			looper_ = periodics_.begin();
+		}
+		else
+		{
+			auto& periodic = *looper_;
 			bool read=false;
 
-			while (now >= periodic.next)
+			while (periodic.ms and ms >= periodic.next)
 			{
 				read = true;
 				periodic.next += periodic.ms;
@@ -109,15 +137,32 @@ void Roomba::loop()
 			{
 				Serial.write(142);
 				Serial.write(periodic.packetId);
-				uint8_t* dest = periodic.buf;
-				int8_t len = periodic.len;
-				readBytes(len,
-					[dest, len](uint8_t *buf)
+				readBytes(periodic.len,
+					[this, out, &periodic, mqtt](uint8_t *buf)
 					{
-						memcpy(dest, buf, std::abs(len));
+						if (periodic.topic)
+						{
+							sent_++;
+							if (memcmp(periodic.buf, buf, std::abs(periodic.len)))
+							{
+								String s;
+								if (periodic.len==2)
+									s = String(*reinterpret_cast<uint16_t*>(buf));
+								else if (periodic.len==-2)
+									s = String(*reinterpret_cast<int16_t*>(buf));
+								else if (periodic.len==1)
+									s = String(*reinterpret_cast<uint8_t*>(buf));
+
+								if (s.length())
+								{
+									mqtt->publish(periodic.topic, s);
+								}
+							}
+						}
+						memcpy(periodic.buf, buf, std::abs(periodic.len));
 					});
-				break;
 			}
+			++looper_;
 		}
 	}
 }

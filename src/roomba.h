@@ -14,7 +14,7 @@ class Roomba
   public:
     Roomba();
 
-    void loop();
+    void loop(MqttClient*, OutputStream*);
 
     void start();
     void off()      { Serial.write(133); }
@@ -54,7 +54,7 @@ class Roomba
     bool readBusy() const { return read_left_ ? true : false; }
     void readBytes(int8_t count, ReadCallback callback)
     {
-      read_timeout_ = millis() + 200 + (std::abs(count) << 4) * (1000 / 115200);
+      read_timeout_ = millis() + 100;  // 50ms to receive message max
       read_ptr_ = read_buf_;
       if (count < 0) // fill buffer from end to start
       {
@@ -67,30 +67,38 @@ class Roomba
 
     void stopRead()
     {
+		  ++timeouts_;
       read_left_ = 0;
     }
 
     private:
       struct PeriodicReadBytes
       {
-        PeriodicReadBytes(uint16_t& dest, const uint16_t ms, uint8_t packetId)
-        : buf(reinterpret_cast<uint8_t*>(&dest)) , len(-2) , ms(ms) , next(millis()+ms) , packetId(packetId) {}
+        PeriodicReadBytes(uint16_t& dest, const uint16_t ms, uint8_t packetId, const char* topic = nullptr)
+        : PeriodicReadBytes(reinterpret_cast<uint8_t*>(&dest), -2, ms, packetId, topic) {}
 
-        PeriodicReadBytes(int16_t& dest, const uint16_t ms, uint8_t packetId)
-        : buf(reinterpret_cast<uint8_t*>(&dest)) , len(-2) , ms(ms) , next(millis()+ms) , packetId(packetId) {}
+        PeriodicReadBytes(int16_t& dest, const uint16_t ms, uint8_t packetId, const char* topic = nullptr)
+        : PeriodicReadBytes(reinterpret_cast<uint8_t*>(&dest), -2, ms, packetId, topic) {}
 
-        PeriodicReadBytes(uint8_t& dest, const uint16_t ms, uint8_t packetId)
-        : buf(reinterpret_cast<uint8_t*>(&dest)) , len(sizeof(dest)) , ms(ms) , next(millis()+ms) , packetId(packetId) {}
- 
+        PeriodicReadBytes(uint8_t& dest, const uint16_t ms, uint8_t packetId, const char* topic = nullptr)
+        : PeriodicReadBytes(reinterpret_cast<uint8_t*>(&dest), sizeof(dest), ms, packetId, topic) {}
+
         uint8_t* buf;     // destination
         int8_t len;       // len of destination, negative for reverse order fill
         uint16_t ms;      // delay between reads in ms
         unsigned long next;
         uint8_t packetId; // Id of packet to read (command 142)
+        const char* topic;
+
+      private:
+        PeriodicReadBytes(uint8_t* buf, int8_t len, uint16_t ms, uint8_t packetId, const char* topic)
+        : buf(buf) , len(len) , ms(ms) , next(millis()+ms) , packetId(packetId), topic(topic) {}
+
       };
 
       void motors();         // Set speed of main_brush, side_brush and vacuum
 
+    public:
       uint8_t main_brush_ = 0;
       uint8_t side_brush_ = 0;
       uint8_t vacuum_ = 0;
@@ -102,14 +110,42 @@ class Roomba
       uint16_t read_errors_ = 0;
       ReadCallback read_cb_;
 
+      // battery
       std::string unexpected_read_;
       uint16_t voltage_;
+      uint16_t capacity_;
       int16_t current_;
-      uint8_t dirt_;
-      uint16_t temp_;
 
-    public:
+      // sensors
+      uint8_t dirt_;
+      uint8_t buttons_;
+      uint8_t charge_;
+      uint8_t temp_;
+      uint16_t wall_;
+      uint16_t lclift_;
+      uint16_t flclift_;
+      uint16_t frclift_;
+      uint16_t rclift_;
+      uint8_t bumpers_;   // b7-b0 = res - res - right - fr right | center right - center left - front left - left
+      uint8_t stasis_;
+
+      // velocity
+      uint16_t velocity_;
+      uint16_t lvelocity_;
+      uint16_t rvelocity_;
+      uint16_t radius_;
+
+      // steps
+      uint16_t lsteps_;
+      uint16_t rsteps_;
+
       uint16_t unexpected_bytes_ = 0;   // number of unexpected reveived bytes.
-      std::vector<PeriodicReadBytes> periodics_;
+      using Periodics = std::vector<PeriodicReadBytes>;
+      Periodics periodics_;
+      Periodics::iterator looper_;
+      unsigned long ms_begin_ = 0;  // us when looper_ == begin
+
       unsigned long received = 0;
+      unsigned int sent_ = 0;
+      unsigned long timeouts_ = 0; // receive timeouts
 };

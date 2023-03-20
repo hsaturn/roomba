@@ -31,10 +31,9 @@ RoombaCommand::RoombaCommand()
 							}}},
 	{ "dd+",      { "l r : NUI" , [this](Params& p)->bool
 							{
-								int16_t l=getInt(p.args);
-								int16_t r=getInt(p.args);
-								p.roomba.driveDirect(l,r);
-								p.roomba.driveDirect(l,r);
+								p.roomba.lvelocity_ += getInt(p.args);
+								p.roomba.rvelocity_ += getInt(p.args);
+								p.roomba.driveDirect(p.roomba.lvelocity_, p.roomba.rvelocity_);
 								return true;
 							}}},
 	{ "drive",   { "v rad : drive" , [](Params& p)->bool
@@ -69,16 +68,29 @@ RoombaCommand::RoombaCommand()
 			}}},
 	{ "status",  { "", [](Params& p)
 		{
-			p.out << "received  : " << p.roomba.received << endl;
-			p.out << "unexpected: " << p.roomba.unexpected_bytes_ << endl;
-			p.out << "reading ? : " << (p.roomba.readBusy() ? "yes" : "no") << endl;
+			p.out << "mqtt sent  : " << p.roomba.sent_ << endl;
+			p.out << "timeout rcv: " << p.roomba.timeouts_ << endl;
+			p.out << "received   : " << p.roomba.received << endl;
+			p.out << "unexpected : " << p.roomba.unexpected_bytes_ << endl;
+			p.out << "reading ?  : " << (p.roomba.readBusy() ? "yes" : "no") << endl;
 			return true;
 		}}},
-	{ "periodics", { "", [](Params& p)->bool
+	{ "periodics", { "[topic ms]", [](Params& p)->bool
 		{
-			p.out << "periodics: now=" << millis() << endl;
-			for(const auto& periodic: p.roomba.periodics_)
-				p.out << "packet " << periodic.packetId << ", ms=" << periodic.ms << ", next=" << periodic.next << endl;
+			p.out << "periodics: now=" << millis() << ", args=(" << p.args << ')' << endl;
+			Topic topic=getWord(p.args);
+			int ms = getInt(p.args);
+			for(auto& periodic: p.roomba.periodics_)
+			{
+				if (topic.matches(periodic.topic))
+				{
+					periodic.ms = ms;
+					periodic.next = 0;
+					p.out << "Changed to " << ms << endl;
+				}
+				p.out << "packet " << periodic.packetId << ", ms=" << periodic.ms
+						  << ", next=" << periodic.next << ", topic=" << periodic.topic << endl;
+			}
 			return true;
 		}
 	}},
