@@ -17,8 +17,9 @@ RoombaCommand::RoombaCommand()
 	{ "dock",    { "" , [](Params& p)->bool { p.roomba.dock();  return true; }}},
 	{ "batt",    { "" , [](Params& p)->bool
 		{
-			p.out << "voltage: " << p.roomba.voltage() << "mv" << endl;
-			p.out << "current: " << p.roomba.current() << "mA" << endl;
+			p.out << "voltage : " << p.roomba.voltage() << "mv" << endl;
+			p.out << "current : " << p.roomba.current() << "mA" << endl;
+			p.out << "capacity: " << p.roomba.capacity_ << "mAh" << endl;
 			return true;
 		}}},
 	{ "dirt",    { "" , [this](Params& p)->bool { p.out << "dirt: " << (int)p.roomba.dirt() << endl; return true; }}},
