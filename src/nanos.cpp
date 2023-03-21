@@ -59,6 +59,7 @@ Nanos::Nanos()
                 digitalWrite(pin, digitalRead(pin) == LOW ? HIGH : LOW);
                 return true;
             }}},
+        { "rev", { "" , [](Params&p) -> bool { p.out << "Esp firmware: " << AUTO_VERSION << endl; }}},
     };
 }
 

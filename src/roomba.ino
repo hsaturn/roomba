@@ -99,7 +99,7 @@ void onPublish(const MqttClient* /* source */, const Topic& topic, const char* p
 
 void onConnect(String ip)
 {
-  telnet << "Busybox telnet\n\r> ";
+  telnet << "Roomba v" << AUTO_VERSION << endl;
 }
 
 void setupTelnet()
