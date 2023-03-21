@@ -28,7 +28,6 @@ bool Command::handle(Params& p)
 			continue;
 		}
 
-		bool exec = false;
 		std::vector<std::string> candidates;
 		Handler* found = nullptr;
 		for(auto& command: commands)
@@ -39,43 +38,37 @@ bool Command::handle(Params& p)
 			{
 				// prefix with module name makes the cmd unambiguous
 				auto it=command->handlers.find(cmd.c_str());
-				if (it == command->handlers.end()) continue;
-				exec = true;
-				it->second.handler(p);
-				break;
+				if (it != command->handlers.end())
+				{
+					found = &(it->second);
+					break;
+				}
 			}
 
-			for(auto it: command->handlers)
+			for(auto& it: command->handlers)
 			{
 				if (it.first.substr(0, cmd.length()) == cmd)
 				{
 					candidates.push_back(std::string(command->name())+'/'+it.first);
-					found = &(it.second);
+					found = &it.second;
 				}
 			}
 		}
-		if (not exec)
+
+		if (candidates.size() > 1)
 		{
-			if (candidates.size()>1)
+			p.out << endl << "Ambiguous command '" << cmd.c_str() << "', candidates are : " << endl;
+			for (const auto &candidate : candidates)
 			{
-				const char* comma = "";
-				p.out << "Ambiguous command '" << cmd.c_str() << "', candidates are : ";
-				for(const auto& candidate: candidates)
-				{
-					p.out << comma << candidate;
-					comma = ", ";
-				}
-				p.out << endl;
+				p.out << "  " << candidate << endl;
 			}
-			else if (found and candidates.size()==1)	// both should be false or true together...
-			{
-				if (cmd != candidates[0])
-					p.out << candidates[0] << ' ' << p.args << endl;
-				found->handler(p);
-				return true;
-			}
+			p.out << endl;
 			return false;
 		}
+		else if (not found)
+			return false;
+		
+		found->handler(p);
 	}
 	return true;
 }
@@ -93,17 +86,19 @@ void Command::help(Params& p)
 		p.out << "modules          : list of installed modules" << endl;
 		p.out << "help or ?        : this help" << endl;
 		p.out << "help or ? module : help on module" << endl;
-		p.out << "help command     : help on command" << endl;
+		p.out << "help command     : search command (* for all)" << endl;
 		p.out << endl;
 		p.out << "command can be prefix with module name, ex: roomba/clean" << endl;
 		p.out << endl;
-		return;
 	}
+
 	auto cmd = getWord(p.args);
-	uint8_t found=0;
+	if (cmd.length()==0) return;
+
+	uint8_t found = 0;
 	for(auto& command: commands)
 	{
-		if (command->handlers.size() and (cmd.length()==0 or cmd==command->name()))
+		if (command->handlers.size() and cmd==command->name())
 		{
 			p.out << command->name() << " commands:" << endl;
 			for(auto& it: command->handlers)
@@ -118,8 +113,19 @@ void Command::help(Params& p)
 			auto it = command->handlers.find(cmd);
 			if (it != command->handlers.end())
 			{
-				found++;
 				p.out << command->name() << '/' << it->first.c_str() << ' ' << it->second.args.c_str() << endl;
+				found++;
+				break;
+			}
+
+			// Search approximative commands
+			for(auto it: command->handlers)
+			{
+				if (cmd=="*" or cmd==it.first.substr(0, cmd.length()))
+				{
+					p.out << command->name() << '/' << it.first.c_str() << ' ' << it.second.args.c_str() << endl;
+					found++;
+				}
 			}
 		}
 	}
