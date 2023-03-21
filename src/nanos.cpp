@@ -17,8 +17,8 @@ Nanos::Nanos()
         { "reboot", { "" ,                  [](Params& p)->bool { ESP.reset(); return true; }}},
         { "echo",   { "" ,                  [](Params& p)->bool { p.out << p.args.c_str() << endl; p.args.clear(); return true; }}},
         { "ip",     { "" ,                  [](Params& p)->bool { p.out << "ip: " << WiFi.localIP().toString() << endl; return true; }}},
-        { "free", { "" ,                    [](Params& p)->bool { p.out << "free heap: " << String(ESP.getFreeHeap()) << endl; return true; }}},
-        { "error", { "n : set flash mode" , [](Params& p)->bool { flash.error(getInt(p.args)); return true; }}},
+        { "free",   { "" ,                  [](Params& p)->bool { p.out << "free heap: " << String(ESP.getFreeHeap()) << endl; return true; }}},
+        { "flash",  { "ms : set flash led", [](Params& p)->bool { flash.error(getInt(p.args)); return true; }}},
         { "int", { "" ,                     [](Params& p)->bool { 
             std::string::size_type s=0;
             while(s != p.args.length())
@@ -32,12 +32,6 @@ Nanos::Nanos()
         { "undef", { "name" ,        [this](Params& p)->bool { this->undef(p); return true; } }},
         { "wait",  { "ms",           [this](Params& p)->bool { delay(getInt(p.args)); return true; }}},
         { "pwr" ,  { "save full",    [this](Params& p)->bool { pwr_policy(p); return true; }}},
-        { "loops", { " : avg loop time",[this](Params& p)->bool {
-            p.out << "Avg loop time: " << String(loops_avg_) << "us, min/max=" << min_loop_ << '/' << max_loop_ << "us." << endl;
-            min_loop_ = 99999999;
-            max_loop_ = 0;
-            return true;
-        }}},
         { "every", { "ms command | on | off | list | remove #", [this](Params& p)->bool { this->every(p); return true; }}},
         { "pin", { "n , read | in | ind | fun | out" , [](Params& p)->bool
             {
@@ -53,13 +47,13 @@ Nanos::Nanos()
                 p.out << endl;
                 return true;
             }}},
-        { "toggle", { "" , [](Params& p)->bool
+        { "toggle", { "pin" , [](Params& p)->bool
             {
                 uint8_t pin = getInt(p.args);
                 digitalWrite(pin, digitalRead(pin) == LOW ? HIGH : LOW);
                 return true;
             }}},
-        { "rev", { "" , [](Params&p) -> bool { p.out << "Esp firmware: " << AUTO_VERSION << endl; }}},
+        { "rev", { "" , [](Params&p) -> bool { p.out << "Esp firmware: " << AUTO_VERSION << endl; return true; }}},
     };
 }
 
@@ -142,15 +136,6 @@ void Nanos::undef(Params& p)
 
 void Nanos::loop()
 {
-    auto ms = millis();
-    if (last_loop_)
-    {
-        auto delta_ms = ms-last_loop_;
-        loops_avg_ = 0.99*loops_avg_ + 0.01*delta_ms;
-        max_loop_ = std::max(delta_ms, max_loop_);
-        min_loop_ = std::min(delta_ms, min_loop_);
-    }
-    last_loop_ = ms;
 }
 
 std::string Nanos::getEvery()
