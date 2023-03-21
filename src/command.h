@@ -48,7 +48,8 @@ class Command
 		};
 
 		using command = std::string;
-		std::map<command, Handler> handlers;
+		using Handlers = std::map<command, Handler>;
+		Handlers handlers;
 
 	private:
 		static std::vector<Command*>	commands;
