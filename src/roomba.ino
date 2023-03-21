@@ -52,9 +52,25 @@ Nanos* nanos = nullptr;
 
 void onInputReceived(String str)
 {
+  #if 0
+  telnet << '[';
+  for(const auto& c: str)
+  {
+    if (c < ' ' or c>127)
+      telnet << '<' << (int)c << '>';
+    else
+      telnet << c;
+  }
+  telnet << ']' << endl;
+  #endif
+
   flash.flash();
 	static std::string cmd;
-	if (str=="\r" or str=="\n")
+  if (str=="\r")
+  {
+
+  }
+	else if (str=="\n")
 	{
 		if (cmd.length())
 		{
@@ -100,6 +116,7 @@ void onPublish(const MqttClient* /* source */, const Topic& topic, const char* p
 void onConnect(String ip)
 {
   telnet << "Roomba v" << AUTO_VERSION << endl;
+  onInputReceived("\n");
 }
 
 void setupTelnet()
