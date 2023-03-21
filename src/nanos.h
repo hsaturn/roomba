@@ -35,10 +35,6 @@ class Nanos : public Command
 		void def(Params&);
 		void undef(Params&);
 		char recurse = 0;
-		float loops_avg_ = 0;	// avg delay between loops in ms
-		unsigned long last_loop_ = 0;
-		unsigned long min_loop_ = 999999;
-		unsigned long max_loop_ = 0;
 		bool every_on_ = true;
 
 		void every(Params&);
