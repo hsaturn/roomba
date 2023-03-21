@@ -8,13 +8,13 @@ bool Command::handle(Params& p)
 	{
 		std::string module="";
 		std::string cmd = getWord(p.args);
-		std::string::size_type dot = cmd.find('.');
-		if (dot != std::string::npos)
+		std::string::size_type slash = cmd.find('/');
+		if (slash != std::string::npos)
 		{
-			module = cmd.substr(0, dot);
-			cmd.erase(0, dot+1);
+			module = cmd.substr(0, slash);
+			cmd.erase(0, slash+1);
 		}
-		if (cmd == "help")
+		if (cmd == "help" or cmd=="?")
 		{
 			help(p);
 			continue;
@@ -29,19 +29,53 @@ bool Command::handle(Params& p)
 		}
 
 		bool exec = false;
+		std::vector<std::string> candidates;
+		Handler* found = nullptr;
 		for(auto& command: commands)
 		{
-			// p.out << "exec(" << cmd.c_str() << ") args=(" << p.args.c_str() << ')' <<endl;
 			if (module.length() and module != command->name()) continue;
 
-			auto it=command->handlers.find(cmd.c_str());
-			if (it == command->handlers.end()) continue;
-			exec = true;
-			it->second.handler(p);
-			break;
+			if (module.length())
+			{
+				// prefix with module name makes the cmd unambiguous
+				auto it=command->handlers.find(cmd.c_str());
+				if (it == command->handlers.end()) continue;
+				exec = true;
+				it->second.handler(p);
+				break;
+			}
+
+			for(auto it: command->handlers)
+			{
+				if (it.first.substr(0, cmd.length()) == cmd)
+				{
+					candidates.push_back(std::string(command->name())+'/'+it.first);
+					found = &(it.second);
+				}
+			}
 		}
 		if (not exec)
+		{
+			if (candidates.size()>1)
+			{
+				const char* comma = "";
+				p.out << "Ambiguous command '" << cmd.c_str() << "', candidates are : ";
+				for(const auto& candidate: candidates)
+				{
+					p.out << comma << candidate;
+					comma = ", ";
+				}
+				p.out << endl;
+			}
+			else if (found and candidates.size()==1)	// both should be false or true together...
+			{
+				if (cmd != candidates[0])
+					p.out << candidates[0] << ' ' << p.args << endl;
+				found->handler(p);
+				return true;
+			}
 			return false;
+		}
 	}
 	return true;
 }
@@ -54,11 +88,19 @@ void Command::addHandler(Command* command)
 void Command::help(Params& p)
 {
 	p.out << endl;
-	p.out << "modules       : list of installed modules" << endl;
-	p.out << "help [module] : this help" << endl;
-	p.out << "  params: l/r/v=-500 .. 500mm/s  rad=-2000 2000mm" << endl;
-	p.out << endl;
+	if (p.args.length() == 0)
+	{
+		p.out << "modules          : list of installed modules" << endl;
+		p.out << "help or ?        : this help" << endl;
+		p.out << "help or ? module : help on module" << endl;
+		p.out << "help command     : help on command" << endl;
+		p.out << endl;
+		p.out << "command can be prefix with module name, ex: roomba/clean" << endl;
+		p.out << endl;
+		return;
+	}
 	auto cmd = getWord(p.args);
+	uint8_t found=0;
 	for(auto& command: commands)
 	{
 		if (command->handlers.size() and (cmd.length()==0 or cmd==command->name()))
@@ -66,10 +108,24 @@ void Command::help(Params& p)
 			p.out << command->name() << " commands:" << endl;
 			for(auto& it: command->handlers)
 			{
+				found++;
 				p.out << "  " << it.first.c_str() << ' ' << it.second.args.c_str() << endl;
 			}
 			p.out << endl;
 		}
+		else
+		{
+			auto it = command->handlers.find(cmd);
+			if (it != command->handlers.end())
+			{
+				found++;
+				p.out << command->name() << '/' << it->first.c_str() << ' ' << it->second.args.c_str() << endl;
+			}
+		}
+	}
+	if (found)
+	{
+		p.out << endl << "params: l/r/v=-500 .. 500mm/s  rad=-2000 2000mm" << endl;
 	}
 }
 
