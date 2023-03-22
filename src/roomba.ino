@@ -12,6 +12,7 @@
 #include "lidar.h"
 #include "auth.h"
 #include "flash.h"
+#include "mqtt.h"
 
 const std::string hostname="Roomba";
 
@@ -40,15 +41,13 @@ const std::string hostname="Roomba";
 
 std::string topic="sensor/temperature";
 
-MqttBroker broker(1883);
-MqttClient mqtt(&broker);
-
 ESPTelnet telnet;
 Roomba roomba;
 
 Flash flash(5000);
 Lidar* lidar = nullptr;
 Nanos* nanos = nullptr;
+Mqtt* mqtt = nullptr;
 
 void onInputReceived(String str)
 {
@@ -94,25 +93,6 @@ void onInputReceived(String str)
 		cmd += std::string(str.c_str());
 }
 
-void onPublish(const MqttClient* /* source */, const Topic& topic, const char* payload, size_t /* length */)
-{
-  std::string t = topic.str();
-  std::string device = Command::getWord(t, '/');
-  if (device == "roomba")
-  {
-    if (t == "exec")
-    {
-      telnet << "mqtt: received " << topic.c_str() << ", " << payload << endl;
-      onInputReceived(payload);
-    }
-    else
-    {
-      onInputReceived(t.c_str());
-    }
-    onInputReceived("\n");
-  }
-}
-
 void onConnect(String ip)
 {
   telnet << "Roomba v" << AUTO_VERSION << endl;
@@ -154,9 +134,8 @@ void setupOta()
 
 void setupMqtt()
 {
-  broker.begin();
-  mqtt.setCallback(onPublish);
-  mqtt.subscribe("#");
+  mqtt = new Mqtt;
+  Command::addHandler(mqtt);
 }
 
 void setupRoomba()
@@ -177,7 +156,7 @@ void setupNanos()
 
 void setupLidar()
 {
-  lidar = new Lidar(telnet, &mqtt);
+  lidar = new Lidar(telnet, mqtt->client());
   Command::addHandler(lidar);
 }
 
@@ -197,10 +176,8 @@ void loop()
 {
   ArduinoOTA.handle();
   telnet.loop();
-  broker.loop();
-  mqtt.loop();
   flash.loop();
-  roomba.loop(&mqtt, &telnet);
+  roomba.loop(mqtt->client(), &telnet);
   Command::loops();
 
   static unsigned long last = 0;
