@@ -14,12 +14,18 @@ Roomba::Roomba()
 		{ buttons_, 20, 18, "sensor/buttons" },
 		{ temp_, 1000, 24, "sensor/temp" },
 		{ wall_, 50, 27, "sensor/wall" },
-		{ lclift_, 50, 28, "sensor/left_clift" },
-		{ flclift_, 50, 29, "sensor/front_left_clift" },
-		{ frclift_, 50, 30, "sensor/front_right_clift" },
-		{ rclift_, 50, 31, "sensor/right_clift" },
-		{ bumpers_, 20, 45, "sensors/bumpers"},
-		{ stasis_, 50, 58, "sensors/statis" },
+		{ lclift_, 50, 28, "sensor/clifts/left" },
+		{ flclift_, 50, 29, "sensor/clifts/front_left" },
+		{ frclift_, 50, 30, "sensor/clifts/front_right" },
+		{ rclift_, 50, 31, "sensor/clifts/right" },
+		{ bumpers_, 20, 45, "sensor/bump/all"},
+		{ bump_l_, 50, 46, "sensor/bump/left" },
+		{ bump_fl_, 50, 47, "sensor/bump/front_left" },
+		{ bump_cl_, 50, 48, "sensor/bump/center_left" },
+		{ bump_cr_, 50, 49, "sensor/bump/center_right" },
+		{ bump_fr_, 50, 50, "sensor/bump/front_right" },
+		{ bump_r_, 50, 51, "sensor/bump/right" },
+		{ stasis_, 50, 58, "sensor/statis" },
 
 		{ velocity_, 20, 39, "velocity/velocity" },
 		{ radius_, 20, 40, "velocity/radius" },
@@ -119,7 +125,8 @@ void Roomba::loop(MqttClient* mqtt, OutputStream* out)
 		auto ms = millis();
 		if (looper_ == periodics_.end())
 		{
-			if (ms_begin_ and mqtt) mqtt->publish("last_ploop", String(ms - ms_begin_));
+			last_ploop_ = ms-ms_begin_;
+			if (ms_begin_ and mqtt) mqtt->publish("last_ploop", String(last_ploop_));
 			ms_begin_ = ms;
 			looper_ = periodics_.begin();
 		}
@@ -155,7 +162,7 @@ void Roomba::loop(MqttClient* mqtt, OutputStream* out)
 
 								if (s.length())
 								{
-									mqtt->publish(periodic.topic, s);
+									mqtt->publish(periodic.topic, s, true);
 								}
 							}
 						}

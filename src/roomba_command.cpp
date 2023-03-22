@@ -74,11 +74,12 @@ RoombaCommand::RoombaCommand()
 			p.out << "received   : " << p.roomba.received << endl;
 			p.out << "unexpected : " << p.roomba.unexpected_bytes_ << endl;
 			p.out << "reading ?  : " << (p.roomba.readBusy() ? "yes" : "no") << endl;
+			p.out << "last_ploop : " << p.roomba.last_ploop_ << endl;
 			return true;
 		}}},
 	{ "periodics", { "[topic ms]", [](Params& p)->bool
 		{
-			p.out << "periodics: now=" << millis() << ", args=(" << p.args << ')' << endl;
+			p.out << "periodics: count=" << p.roomba.periodics_.size() << ", now_ms=" << millis() << endl;
 			Topic topic=getWord(p.args);
 			int ms = getInt(p.args);
 			for(auto& periodic: p.roomba.periodics_)
@@ -92,6 +93,7 @@ RoombaCommand::RoombaCommand()
 				p.out << "packet " << periodic.packetId << ", ms=" << periodic.ms
 						  << ", next=" << periodic.next << ", topic=" << periodic.topic << endl;
 			}
+
 			return true;
 		}
 	}},
