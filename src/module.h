@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include "utils.h"
 
 #include <ESPTelnet.h>
 using OutputStream=ESPTelnet;
@@ -15,7 +16,7 @@ inline ESPTelnet &operator <<(ESPTelnet &obj, std::string arg) { obj.print(arg.c
 
 class Roomba;
 
-class Command
+class Module
 {
 
 	public:
@@ -29,16 +30,13 @@ class Command
 		};
 
 		virtual const char* name() const = 0;
-		virtual void loop() {};
+		virtual void loop() {}
 		static void loops();
 
-		static bool handle(Params& params);
-		static void addHandler(Command*);
-		static std::string firstWord(const std::string&);
-		static std::string getWord(std::string&, char sep=' ');
-		static void trim(std::string&);
-		static int getInt(std::string&);
-		static void help(Params&);
+		static inline std::string firstWord(const std::string& s) { return Utils::firstWord(s); }
+		static inline std::string getWord(std::string& s, char sep=' ') { return Utils::getWord(s, sep); }
+		static inline void trim(std::string& s) { Utils::trim(s); }
+		static inline int getInt(std::string& s) { return Utils::getInt(s); }
 
 		using HandlerFunc = bool(Params&);
 		struct Handler
@@ -50,7 +48,4 @@ class Command
 		using command = std::string;
 		using Handlers = std::map<command, Handler>;
 		Handlers handlers;
-
-	private:
-		static std::vector<Command*>	commands;
 };

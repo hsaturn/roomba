@@ -1,9 +1,8 @@
 #pragma once
 
-#include <string>
-#include "command.h"
+#include "module.h"
 
-class Logo : public Command
+class Logo : public Module
 {
 	public:
 		const char* name() const override { return "logo"; }

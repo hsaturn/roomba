@@ -6,7 +6,7 @@
 #include <ArduinoOTA.h>
 
 #include "roomba.h"
-#include "roomba_command.h"
+#include "roomba_module.h"
 #include "nanos.h"
 #include "logo.h"
 #include "lidar.h"
@@ -73,15 +73,15 @@ void onInputReceived(String str)
 	{
 		if (cmd.length())
 		{
-			std::string first = Command::firstWord(cmd);
-      Command::Params p(roomba, cmd, telnet);
-			if (Command::handle(p))
+			std::string first = Utils::firstWord(cmd);
+      Module::Params p(roomba, cmd, telnet);
+			if (nanos->execute(p))
 			{
 				telnet.print("ok");
 			}
 			else
 			{
-				telnet << "Unknow command: " << first;
+				telnet << "Unknow module: " << first;
 			}
     }
     telnet << endl;
@@ -135,38 +135,37 @@ void setupOta()
 void setupMqtt()
 {
   mqtt = new Mqtt;
-  Command::addHandler(mqtt);
+  nanos->addModule(mqtt);
 }
 
 void setupRoomba()
 {
-	Command::addHandler(new RoombaCommand());
+	nanos->addModule(new RoombaModule());
 }
 
 void setupLogo()
 {
-	Command::addHandler(new Logo());
+	nanos->addModule(new Logo());
 }
 
 void setupNanos()
 {
   nanos = new Nanos;
-  Command::addHandler(nanos);
 }
 
 void setupLidar()
 {
   lidar = new Lidar(telnet, mqtt->client());
-  Command::addHandler(lidar);
+  nanos->addModule(lidar);
 }
 
 void setup()
 {
+  setupNanos();
   setupWifi();
   setupOta();
   setupTelnet();
   setupMqtt();
-  setupNanos();
   setupRoomba();
   setupLogo();
   setupLidar();
@@ -178,7 +177,7 @@ void loop()
   telnet.loop();
   flash.loop();
   roomba.loop(mqtt->client(), &telnet);
-  Command::loops();
+  nanos->loops();
 
   static unsigned long last = 0;
   std::string un = roomba.unexpectedChars();
@@ -198,13 +197,10 @@ void loop()
     }
   }
 
-  if (nanos)
+  std::string cmd = nanos->getEvery();
+  if (cmd.length())
   {
-    std::string cmd = nanos->getEvery();
-    if (cmd.length())
-    {
-      Command::Params p(roomba, cmd, telnet);
-      Command::handle(p);
-    }
+    Module::Params p(roomba, cmd, telnet);
+    nanos->execute(p);
   }
 }

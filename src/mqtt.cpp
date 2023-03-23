@@ -1,4 +1,5 @@
 #include "mqtt.h"
+#include "nanos.h"
 
 extern Roomba roomba;
 extern OutputStream telnet;
@@ -6,25 +7,13 @@ extern OutputStream telnet;
 void onPublish(const MqttClient* /* source */, const Topic& topic, const char* payload, size_t /* length */)
 {
   std::string t = topic.str();
-  std::string device = Command::getWord(t, '/');
+  std::string device = Utils::getWord(t, '/');
 
-  if (device == "roomba")
-  {
-    if (t == "exec")
-    {
-      telnet << "mqtt: received " << topic.c_str() << ", " << payload << endl;
-      std::string cmd(payload);
+  telnet << "mqtt: received " << topic.c_str() << ", " << payload << endl;
+  std::string cmd(payload);
 
-      Command::Params p(roomba, cmd, telnet);
-      Command::handle(p);
-    }
-    else
-    {
-      std::string payload(t.c_str());
-      Command::Params p(roomba, payload, telnet);
-      Command::handle(p);
-    }
-  }
+  Module::Params p(roomba, cmd, telnet);
+  nanos->execute(p);
 }
 
 Mqtt::Mqtt()

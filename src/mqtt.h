@@ -1,7 +1,7 @@
-#include "command.h"
+#include "module.h"
 #include "TinyMqtt.h"
 
-class Mqtt : public Command
+class Mqtt : public Module
 {
 	public:
     Mqtt();

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "command.h"
+#include "module.h"
 
 struct Every
 {
@@ -11,7 +11,7 @@ struct Every
 
   void dump(OutputStream& out) const
   {
-		out << (active ? "enabled " : "disabled ");
+    out << (active ? "enabled " : "disabled ");
 
     auto mill=millis();
     out << ms << "ms [" << cmd.c_str() << "] next in ";
@@ -22,22 +22,34 @@ struct Every
   }
 };
 
-class Nanos : public Command
+
+class Nanos : public Module
 {
-	public:
-		Nanos();
-		const char* name() const override { return "nanos"; }
+  public:
+    Nanos();
+    const char* name() const override { return "nanos"; }
 
-		void loop() override;
-		std::string getEvery();
+    void loop() override;
+    std::string getEvery();
 
-	private:
-		void def(Params&);
-		void undef(Params&);
-		char recurse = 0;
-		bool every_on_ = true;
+    void addModule(Module *);
+    void loops();
 
-		void every(Params&);
+    bool execute(Params& params);
+    void help(Params& params);
 
-		std::vector<Every> every_;
+  private:
+    void def(Params&);
+    void undef(Params&);
+    char recurse = 0;
+    bool every_on_ = true;
+
+    void every(Params&);
+
+    std::vector<Every> every_;
+
+  private:
+    std::vector<Module*> modules;
 };
+
+extern Nanos* nanos;

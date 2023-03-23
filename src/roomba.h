@@ -5,7 +5,7 @@
 #include <map>
 
 #include <TinyMqtt.h>
-#include "command.h"
+#include "module.h"
 
 #define BRC_PIN 14
 
@@ -87,7 +87,7 @@ class Roomba
         int8_t len;       // len of destination, negative for reverse order fill
         uint16_t ms;      // delay between reads in ms
         unsigned long next;
-        uint8_t packetId; // Id of packet to read (command 142)
+        uint8_t packetId; // Id of packet to read (module 142)
         const char* topic;
 
       private:
